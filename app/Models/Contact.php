@@ -45,18 +45,17 @@ class Contact extends Model
       $apiURL = env('API_CAMPANING_URL', null);
       $apiKey = env('API_KEY_CAMPANING', null);
 
+      
       $opciones = array(
-        'http'=>array(
-          'method'=>"GET",
-          'header'=>"Api-Token: $apiKey"
+      'http'=>array(
+        'method'=>"GET",
+        'header'=>"Api-Token: $apiKey"
         )
-      );
-
+      );  
       $contexto = stream_context_create($opciones);        
 
       try {
         $fichero = file_get_contents("$apiURL/api/3/contacts", false, $contexto);
-
         $data = json_decode($fichero, true);
 
         for($i = 0; $i < count($data["contacts"]); $i++){
@@ -92,28 +91,51 @@ class Contact extends Model
         }
         
 
-      //   return "Fine";
+        return "Fine";
 
-      // } catch (\Throwable $th) {
-      //   return $th;
-      // }
+      } catch (\Throwable $th) {
+        return $th;
+      }
     }
 
-    public static function makeDB( $name ){
+    public static function makeQuery($name, $data) {
 
-      
+      $query = "CREATE TABLE IF NOT EXISTS $name ( id INT(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, ";
+  
+      foreach($data as $name=>$prop){
+  
+        $type = empty($prop['type']) ? $prop : $prop['type'];
+  
+        $default = empty($prop['default']) ?  " \" \" " : 
+          ( $prop['default'] == "null" ? $prop['default'] : "\"" . $prop['default'] . "\"" );
+  
+        $query .= "$name $type(255) DEFAULT $default, ";
+      }
+  
+      $query .= "updated_at TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE NOW(), created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)";
+
+      return $query;
+    }
+
+    public static function makeDB( $name, $data ){
+
       try {
-        $pdo = DB::connection()->getPdo();        
-        $query = "CREATE TABLE IF NOT EXISTS $name  ( id INT(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL )";
-        
-        $pdo->exec($query);
+        $name_dt = date("Ymd") . $name;
+        $query = Contact::makeQuery( $name_dt, $data );
 
-        return "CREATE $name TABLE";
-        
+        $pdo = DB::connection()->getPdo();
+
+        $pdo->exec($query);
+        return "CREATE $name_dt TABLE";
       } catch (\Throwable $th) {
         throw $th;
       }
 
+    }
+
+    public static function exp(){
+
+      return "Estas son comillas dobles:  \" Daniel \" "; 
     }
 
 
