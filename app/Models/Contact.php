@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Contact extends Model
 {
@@ -40,17 +41,21 @@ class Contact extends Model
     ];
 
     public static function setContactsByApi() {
+
+      $apiURL = env('API_CAMPANING_URL', null);
+      $apiKey = env('API_KEY_CAMPANING', null);
+
       $opciones = array(
         'http'=>array(
           'method'=>"GET",
-          'header'=>"Api-Token: 41ddbe8861827f5d6f7de5d0db26012b647662f3f9113c474f278066f0bd5e1b851e382c"
+          'header'=>"Api-Token: $apiKey"
         )
       );
 
       $contexto = stream_context_create($opciones);        
 
       try {
-        $fichero = file_get_contents('https://partidoelige.api-us1.com/api/3/contacts', false, $contexto);
+        $fichero = file_get_contents("$apiURL/api/3/contacts", false, $contexto);
 
         $data = json_decode($fichero, true);
 
@@ -87,10 +92,30 @@ class Contact extends Model
         }
         
 
-        return "Fine";
+      //   return "Fine";
 
-      } catch (\Throwable $th) {
-        return $th;
-      }
+      // } catch (\Throwable $th) {
+      //   return $th;
+      // }
     }
+
+    public static function makeDB( $name ){
+
+      
+      try {
+        $pdo = DB::connection()->getPdo();        
+        $query = "CREATE TABLE IF NOT EXISTS $name  ( id INT(10) NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL )";
+        
+        $pdo->exec($query);
+
+        return "CREATE $name TABLE";
+        
+      } catch (\Throwable $th) {
+        throw $th;
+      }
+
+    }
+
+
+
 }
